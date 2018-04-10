@@ -36,11 +36,7 @@ enum class MSG_TYPE : unsigned int
     HW
 };
 
-struct TASK_MSG
-{
-    MSG_TYPE type;
-    TASK_ANY body;
-};
+
 
 static int block_sigpipe()
 {

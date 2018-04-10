@@ -14,7 +14,7 @@
 #include <assert.h>
 #include <cstddef>
 #include "util.hpp"
-
+#include <utility>
 
 template <typename T>
 class SPSCQueue
@@ -27,15 +27,15 @@ class SPSCQueue
 
     ~SPSCQueue() { delete[] buffer_; }
 
-    bool enqueue(const T &input)
+    bool enqueue(T &&input)
     {
-        const size_t pos = tail_.load(std::memory_order_relaxed);
-        const size_t next_pos = (pos + 1) & mask_;
+        size_t pos = tail_.load(std::memory_order_relaxed);
+        size_t next_pos = (pos + 1) & mask_;
         if (next_pos == head_.load(std::memory_order_acquire))
         {
             return false;
         }
-        buffer_[pos] = input;
+        buffer_[pos] = std::move(input);
         tail_.store(next_pos, std::memory_order_release);
         return true;
     }
@@ -47,7 +47,7 @@ class SPSCQueue
         {
             return false;
         }
-        output = buffer_[pos];
+        output = std::move(buffer_[pos]);
         head_.store((pos + 1) & mask_, std::memory_order_release);
         return true;
     }

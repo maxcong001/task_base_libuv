@@ -15,7 +15,7 @@ class EventThread : public LoopThread
             __LOG(error, "loop thread start fail!");
             return rc;
         }
-        event_queue_.reset(new AsyncQueue<MPMCQueue<E>>(queue_size));
+        event_queue_.reset(new AsyncQueue<SPSCQueue<E>>(queue_size));
         return event_queue_->init(loop(), this, on_event_internal);
     }
 
@@ -46,5 +46,5 @@ class EventThread : public LoopThread
         }
     }
 
-    std::unique_ptr<AsyncQueue<MPMCQueue<E>>> event_queue_;
+    std::unique_ptr<AsyncQueue<SPSCQueue<E>>> event_queue_;
 };

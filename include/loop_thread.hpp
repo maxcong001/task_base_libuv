@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <uv.h>
-typedef MPMCQueue<TASK_MSG> TASK_QUEUE;
+
 
 class LoopThread
 {

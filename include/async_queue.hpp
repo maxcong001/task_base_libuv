@@ -27,7 +27,7 @@ public:
     uv_async_send(&async_);
   }
 
-  bool enqueue(const typename Q::EntryType &data)
+  bool enqueue( typename Q::EntryType &data)
   {
     __LOG(debug, "AsyncQueue::enqueue is called");
     if (queue_.enqueue(data))

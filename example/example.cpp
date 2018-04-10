@@ -4,6 +4,13 @@
 #include "timer.hpp"
 #include <chrono>
 #include <thread>
+#include "spsc_queue.hpp"
+struct TASK_MSG
+{
+    MSG_TYPE type;
+    TASK_ANY body;
+};
+
 class IOWorker : public EventThread<TASK_MSG>
 {
   public:
@@ -89,7 +96,7 @@ int main()
     tmp_ptr->init();
     tmp_ptr->run();
 
-    for (int i = 0; i < 10000000; i++)
+    for (int i = 0; i < 100; i++)
     {
         for (int j = 0; j < 1; j++)
         {
@@ -97,8 +104,10 @@ int main()
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 #endif
-
+#if 0
     __LOG(debug, "now create a loop");
     uv_loop_t *loop = uv_loop_new();
     //uv_loop_t *loop = uv_default_loop();
@@ -120,5 +129,15 @@ int main()
 
     std::this_thread::sleep_for(std::chrono::milliseconds(20000));
     loop_thread.join();
+#endif
+    using unique_ptr_tmp = std::unique_ptr<int>;
+    auto tmp = new SPSCQueue<unique_ptr_tmp>(100);
+
+    auto foo = std::unique_ptr<int>(new int(101));
+    tmp->enqueue(std::move(foo));
+    unique_ptr_tmp bar;
+    tmp->dequeue(bar);
+    __LOG(debug, "got form queue : " << *bar);
+
     std::cout << "test end" << std::endl;
 }
