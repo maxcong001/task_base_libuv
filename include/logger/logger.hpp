@@ -111,7 +111,7 @@ void error(const std::string &msg, const std::string &file, std::size_t line);
 void set_log_level(logger_iface::log_level level);
 void dump_log();
 void set_max_log_buff(unsigned int num);
-//#define __LOGGING_ENABLED
+#define __LOGGING_ENABLED
 
 #ifdef __LOGGING_ENABLED
 #define __LOG(level, msg)                          \

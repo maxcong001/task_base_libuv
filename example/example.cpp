@@ -1,6 +1,7 @@
 
 #include "logger/logger.hpp"
 #include "event_thread.hpp"
+#include "timer.hpp"
 #include <chrono>
 #include <thread>
 class IOWorker : public EventThread<TASK_MSG>
@@ -63,11 +64,24 @@ class IOWorker : public EventThread<TASK_MSG>
     uv_prepare_t prepare_;
 };
 
+void timer_cb(Timer *)
+{
+    __LOG(debug, "timer fired");
+}
+void timer_once_cb(Timer *)
+{
+    __LOG(debug, "timer once fired");
+}
+void timer_after_cb(Timer *)
+{
+    __LOG(debug, "timer after fired");
+}
 int main()
 {
     set_log_level(logger_iface::log_level::debug);
     std::cout << "test started" << std::endl;
 
+#if 0
     auto tmp_ptr = new IOWorker();
 
     TASK_MSG msg;
@@ -83,7 +97,30 @@ int main()
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    //std::this_thread::sleep_for(std::chrono::milliseconds(500000));
+#endif
 
+    __LOG(debug, "now create a loop");
+    uv_loop_t *loop = uv_loop_new();
+    //uv_loop_t *loop = uv_default_loop();
+    __LOG(debug, "create a loop successful");
+    Timer timer;
+    __LOG(debug, "new a timer and will start rounds")
+    timer.startRounds(loop, 500, 10, NULL, timer_cb);
+    timer.stop();
+    __LOG(warn, "now test start once");
+    timer.startOnce(loop, 500, NULL, timer_once_cb);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    __LOG(warn, "now test start after, should run after 5s ");
+    timer.stop();
+    timer.startAfter(loop, 1000, 4000, 2, NULL, timer_after_cb);
+
+
+    std::thread loop_thread(uv_run, loop, UV_RUN_DEFAULT);
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(20000));
+    loop_thread.join();
     std::cout << "test end" << std::endl;
+    
 }
