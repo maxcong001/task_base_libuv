@@ -1,7 +1,7 @@
 #pragma once
 
 #include <uv.h>
-#include <functional>  
+#include <functional>
 struct RepeatData
 {
     uv_loop_t *loop;
@@ -14,10 +14,11 @@ class Timer
   public:
     //typedef void (*Callback)(Timer *);
     using Callback = std::function<void(Timer *)>;
-
-    Timer() : handle_(NULL), data_(NULL), cb_(NULL), round_left_(0), interval_(0), loop_(NULL)
+    typedef std::function<int(void *, int)> CBHandler;
+    Timer(uv_loop_t *loop) : handle_(NULL), data_(NULL), cb_(NULL), round_left_(0), interval_(0), loop_(loop)
     {
     }
+    Timer() = delete;
 
     ~Timer()
     {
@@ -33,23 +34,23 @@ class Timer
         return uv_is_active(reinterpret_cast<uv_handle_t *>(handle_)) != 0;
     }
 
-    bool startOnce(uv_loop_t *loop, uint64_t timeout, void *data, Callback cb)
+    bool startOnce(uint64_t timeout, void *data, Callback cb)
     {
-        return startRounds(loop, timeout, 1, data, cb);
+        return startRounds(timeout, 1, data, cb);
     }
 
-    bool startRounds(uv_loop_t *loop, uint64_t interval, uint64_t rounds, void *data, Callback cb)
+    bool startRounds(uint64_t interval, uint64_t rounds, void *data, Callback cb)
     {
-        __LOG(debug, "start rounds, handle is : "<<(void*)handle_<<" round left : "<< rounds);
+        __LOG(debug, "start rounds, handle is : " << (void *)handle_ << " round left : " << rounds);
         if (!handle_)
         {
             __LOG(debug, "handle_ is NULL, start a new one");
             handle_ = new uv_timer_t;
             handle_->data = this;
-            uv_timer_init(loop, handle_);
+            uv_timer_init(loop_, handle_);
         }
         interval_ = interval;
-        loop_ = loop;
+        //loop_ = loop;
         data_ = data;
         cb_ = cb;
         round_left_ = rounds;
@@ -64,7 +65,7 @@ class Timer
 
         if (_count_left)
         {
-            timer->startRounds(timer->loop_, timer->interval_, _count_left, timer->data_, timer->cb_);
+            timer->startRounds(timer->interval_, _count_left, timer->data_, timer->cb_);
         }
         else
         {
@@ -74,15 +75,29 @@ class Timer
     }
 
     // note: actually not forever......, it works for life time ^_^
-    bool startForever(uv_loop_t *loop, uint64_t interval, void *data, Callback cb)
+    bool startForever(uint64_t interval, void *data, Callback cb)
     {
-        return startRounds(loop, interval, uint64_t(-1), data, cb);
+        return startRounds(interval, uint64_t(-1), data, cb);
     }
 
-    bool startAfter(uv_loop_t *loop, uint64_t after, uint64_t interval, uint64_t round, void *data, Callback cb)
+    bool startAfter(uint64_t after, uint64_t interval, uint64_t round, void *data, Callback cb)
     {
-        return startOnce(loop, after, data, [=](Timer * timer) {
-            timer->startRounds(loop, interval, round, data, cb);
+        return startOnce(after, data, [=](Timer *timer) {
+            timer->startRounds(interval, round, data, cb);
+        });
+    }
+
+    bool startCB(uint32_t interval, CBHandler handler, void *userData, int tid)
+    {
+        int _tid = tid;
+        void *_userData = userData;
+        CBHandler _CBHandler = handler;
+        return startForever(interval, NULL, [=](Timer *timer) {
+            int ret = _CBHandler(_userData, _tid);
+            if (ret == -1)
+            {
+                timer->stop();
+            }
         });
     }
 

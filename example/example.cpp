@@ -103,18 +103,17 @@ int main()
     uv_loop_t *loop = uv_loop_new();
     //uv_loop_t *loop = uv_default_loop();
     __LOG(debug, "create a loop successful");
-    Timer timer;
+    Timer timer(loop);
     __LOG(debug, "new a timer and will start rounds")
-    timer.startRounds(loop, 500, 10, NULL, timer_cb);
+    timer.startRounds(500, 10, NULL, timer_cb);
     timer.stop();
     __LOG(warn, "now test start once");
-    timer.startOnce(loop, 500, NULL, timer_once_cb);
+    timer.startOnce(500, NULL, timer_once_cb);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     __LOG(warn, "now test start after, should run after 5s ");
     timer.stop();
-    timer.startAfter(loop, 1000, 4000, 2, NULL, timer_after_cb);
-
+    timer.startAfter(1000, 4000, 2, NULL, timer_after_cb);
 
     std::thread loop_thread(uv_run, loop, UV_RUN_DEFAULT);
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -122,5 +121,4 @@ int main()
     std::this_thread::sleep_for(std::chrono::milliseconds(20000));
     loop_thread.join();
     std::cout << "test end" << std::endl;
-    
 }
