@@ -27,10 +27,11 @@ public:
     uv_async_send(&async_);
   }
 
-  bool enqueue( typename Q::EntryType &data)
+
+  bool enqueue( typename Q::EntryType &&data)
   {
     __LOG(debug, "AsyncQueue::enqueue is called");
-    if (queue_.enqueue(data))
+    if (queue_.enqueue(std::move(data)))
     {
       // uv_async_send() makes no guarantees about synchronization so it may
       // be necessary to use a memory fence to make sure stores happen before

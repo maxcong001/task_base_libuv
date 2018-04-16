@@ -23,6 +23,10 @@ class IOWorker : public EventThread<TASK_MSG>
     {
         __LOG(debug, "receive message with type : " << (char)msg.type);
     }
+    virtual void on_priority_event(const TASK_MSG &msg) override
+    {
+        __LOG(debug, "receive priority message with type : " << (char)msg.type);
+    }
 
     int init()
     {
@@ -88,25 +92,31 @@ int main()
     set_log_level(logger_iface::log_level::debug);
     std::cout << "test started" << std::endl;
 
-#if 0
     auto tmp_ptr = new IOWorker();
 
     TASK_MSG msg;
     msg.type = MSG_TYPE::MANAGER_HB_REQ;
     tmp_ptr->init();
-    tmp_ptr->run();
 
+    tmp_ptr->run();
+#if 0
     for (int i = 0; i < 100; i++)
     {
-        for (int j = 0; j < 1; j++)
+        for (int j = 0; j < 10; j++)
         {
-            bool ret = tmp_ptr->send_event_async(msg);
+             tmp_ptr->send_event_async(std::move(msg));
         }
+        tmp_ptr->send_priority_event_async(std::move(msg));
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 #endif
+    for (int i = 0; i < 10; i++)
+    {
+       tmp_ptr->send_event_async(std::move(msg)); 
+       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(15000));
+
 #if 0
     __LOG(debug, "now create a loop");
     uv_loop_t *loop = uv_loop_new();
@@ -130,6 +140,7 @@ int main()
     std::this_thread::sleep_for(std::chrono::milliseconds(20000));
     loop_thread.join();
 #endif
+#if 0
     using unique_ptr_tmp = std::unique_ptr<int>;
     auto tmp = new SPSCQueue<unique_ptr_tmp>(100);
 
@@ -138,6 +149,6 @@ int main()
     unique_ptr_tmp bar;
     tmp->dequeue(bar);
     __LOG(debug, "got form queue : " << *bar);
-
+#endif
     std::cout << "test end" << std::endl;
 }
